@@ -1,7 +1,7 @@
 {
-  "name": "コラージュ",
-  "short_name": "コラージュ",
-  "description": "写真分割コラージュアプリ",
+  "name": "フリマ用写真分割",
+  "short_name": "フリマ用写真分割",
+  "description": "フリマ出品用写真分割コラージュアプリ",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

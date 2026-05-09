@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="コラージュ">
+  <meta name="apple-mobile-web-app-title" content="フリマ用写真分割">
   <link rel="manifest" href="/manifest.json">
-  <title>コラージュ</title>
+  <title>フリマ用写真分割</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -70,13 +70,12 @@
     .header-title { font-size: 20px; font-weight: 700; }
     .header-sub   { font-size: 13px; color: #6b7280; }
 
-    .slots-wrap { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-    .slots-row  { display: flex; gap: 8px; }
+    .slots-wrap { position: relative; aspect-ratio: 1; margin-bottom: 20px; }
     .slot {
-      flex: 1; background: #fff; border: 2px dashed #d1d5db; border-radius: 12px;
-      aspect-ratio: 1; display: flex; flex-direction: column;
+      position: absolute; background: #fff; border: 2px dashed #d1d5db; border-radius: 12px;
+      display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 4px;
-      cursor: pointer; overflow: hidden; position: relative;
+      cursor: pointer; overflow: hidden;
       -webkit-tap-highlight-color: transparent;
     }
     .slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -114,7 +113,7 @@
 
 <!-- Screen 1 -->
 <div class="screen active" id="s1">
-  <div class="page-title">📸 コラージュ</div>
+  <div class="page-title">📸 フリマ用写真分割</div>
   <div class="page-sub">何分割にしますか？</div>
   <div class="split-grid" id="split-grid"></div>
   <button class="btn btn-primary" id="btn-next" disabled>次へ　写真を選ぶ →</button>
@@ -155,11 +154,11 @@
 'use strict';
 
 // 分割数 → [各行の列数]
-const LAYOUTS = { 2:[2], 3:[3], 4:[2,2], 5:[2,3], 6:[3,3], 7:[3,4], 8:[4,4] };
+const LAYOUTS = { 2:[2], 3:[1,2], 4:[2,2], 5:[2,3], 6:[3,3], 7:[3,4], 8:[4,4] };
 
 // ミニアイコン用
 const LP = {
-  2:[[2]],   3:[[3]],   4:[[2],[2]],
+  2:[[2]],   3:[[1],[2]],   4:[[2],[2]],
   5:[[2],[3]], 6:[[3],[3]], 7:[[3],[4]], 8:[[4],[4]]
 };
 
@@ -203,11 +202,28 @@ $('btn-next').onclick = () => {
 // ── Slots ────────────────────────────────────
 function buildSlots() {
   const wrap = $('slots-wrap'); wrap.innerHTML = '';
+  const layout = LAYOUTS[splitCount];
+  const numRows = layout.length;
+  const maxCols = Math.max(...layout);
+
+  // キャンバスと同じ計算でスロット位置を決定（パーセント座標）
+  const S = 100, p = PAD/CANVAS_SIZE*100, g = GAP/CANVAS_SIZE*100;
+  const C = Math.min((S-p*2-g*(maxCols-1))/maxCols, (S-p*2-g*(numRows-1))/numRows);
+  const gridW = maxCols*C+(maxCols-1)*g, gridH = numRows*C+(numRows-1)*g;
+  const sx = (S-gridW)/2, sy = (S-gridH)/2;
+
   let idx = 0;
-  for (const cols of LAYOUTS[splitCount]) {
-    const row = document.createElement('div'); row.className = 'slots-row';
-    for (let c = 0; c < cols; c++) { row.appendChild(makeSlot(idx++)); }
-    wrap.appendChild(row);
+  for (let r = 0; r < numRows; r++) {
+    const numCols = layout[r];
+    const rowW = numCols*C+(numCols-1)*g;
+    const rx = sx+(gridW-rowW)/2;
+    const y = sy+r*(C+g);
+    for (let c = 0; c < numCols; c++) {
+      const slot = makeSlot(idx++);
+      slot.style.left=`${rx+c*(C+g)}%`; slot.style.top=`${y}%`;
+      slot.style.width=`${C}%`; slot.style.height=`${C}%`;
+      wrap.appendChild(slot);
+    }
   }
 }
 
@@ -281,15 +297,29 @@ function buildCollage() {
 
   const layout = LAYOUTS[splitCount];
   const numRows = layout.length;
-  const cellH = (S - PAD*2 - GAP*(numRows-1)) / numRows;
+  const maxCols = Math.max(...layout);
+
+  // 全セルを正方形にするため、縦横どちらの制約もクリアできる最大サイズを算出
+  const C = Math.min(
+    (S - PAD*2 - GAP*(maxCols-1)) / maxCols,
+    (S - PAD*2 - GAP*(numRows-1)) / numRows
+  );
+
+  // グリッド全体をキャンバス中央に配置
+  const gridW = maxCols*C + (maxCols-1)*GAP;
+  const gridH = numRows*C + (numRows-1)*GAP;
+  const startX = (S - gridW) / 2;
+  const startY = (S - gridH) / 2;
 
   let pi = 0;
   for (let r = 0; r < numRows; r++) {
     const numCols = layout[r];
-    const cellW = (S - PAD*2 - GAP*(numCols-1)) / numCols;
-    const y = PAD + r*(cellH+GAP);
+    // 列数が少ない行はその行内で中央揃え
+    const rowW = numCols*C + (numCols-1)*GAP;
+    const rowX = startX + (gridW - rowW) / 2;
+    const y = startY + r*(C+GAP);
     for (let c = 0; c < numCols; c++) {
-      drawCell(ctx, photos[pi++], PAD + c*(cellW+GAP), y, cellW, cellH);
+      drawCell(ctx, photos[pi++], rowX + c*(C+GAP), y, C, C);
     }
   }
 }
