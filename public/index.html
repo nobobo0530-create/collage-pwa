@@ -195,17 +195,20 @@ $('fi').onchange = async e => {
 };
 
 // ── レイアウト計算 ────────────────────────────
+// 各セルはキャンバス全体を埋めるよう配置（正方形固定なし）
 function getPositions(containerPx) {
   const layout = LAYOUTS[n];
-  const rows = layout.length, maxC = Math.max(...layout);
+  const rows = layout.length;
   const p = PAD/CS*containerPx, g = GAP/CS*containerPx;
-  const C = Math.min((containerPx-p*2-g*(maxC-1))/maxC, (containerPx-p*2-g*(rows-1))/rows);
-  const gw = maxC*C+(maxC-1)*g, gh = rows*C+(rows-1)*g;
-  const sx = (containerPx-gw)/2, sy = (containerPx-gh)/2;
+  const totalH = containerPx - p*2 - g*(rows-1);
+  const rowH = totalH / rows;
   const pos = [];
   for (let r=0; r<rows; r++) {
-    const nc = layout[r], rw = nc*C+(nc-1)*g, rx = sx+(gw-rw)/2, y = sy+r*(C+g);
-    for (let c=0; c<nc; c++) pos.push({ x:rx+c*(C+g), y, C });
+    const nc = layout[r];
+    const totalW = containerPx - p*2 - g*(nc-1);
+    const cellW = totalW / nc;
+    const y = p + r*(rowH+g);
+    for (let c=0; c<nc; c++) pos.push({ x: p+c*(cellW+g), y, W: cellW, H: rowH });
   }
   return pos;
 }
@@ -221,14 +224,14 @@ function buildEdit() {
     const cell = cells[i];
     const el = document.createElement('div');
     el.className = 'ecell';
-    el.style.cssText = `left:${pos.x}px;top:${pos.y}px;width:${pos.C}px;height:${pos.C}px;`;
+    el.style.cssText = `left:${pos.x}px;top:${pos.y}px;width:${pos.W}px;height:${pos.H}px;`;
 
     if (cell?.bmp) {
       const img = document.createElement('img');
       img.src = cell.url;
       el.appendChild(img);
       wrap.appendChild(el);
-      setupTouch(el, img, cell, pos.C);
+      setupTouch(el, img, cell, pos.W, pos.H);
       // 回転ボタン
       const rotBtn = document.createElement('button');
       rotBtn.className = 'rot-btn';
@@ -249,22 +252,22 @@ function buildEdit() {
 }
 
 // ── タッチ処理 ────────────────────────────────
-function setupTouch(el, img, state, C) {
+function setupTouch(el, img, state, W, H) {
   const bmp = state.bmp;
 
   function getDims() {
     const rotated = (state.rot || 0) % 180 !== 0;
     const vw = rotated ? bmp.height : bmp.width;
     const vh = rotated ? bmp.width  : bmp.height;
-    return { bs: Math.max(C/vw, C/vh), vw, vh };
+    return { bs: Math.max(W/vw, H/vh), vw, vh };
   }
 
   function clamp() {
     const { bs, vw, vh } = getDims();
     state.scale = Math.max(1, Math.min(6, state.scale));
     const s = bs * state.scale;
-    const mx = Math.max(0, (vw*s - C) / (2*C));
-    const my = Math.max(0, (vh*s - C) / (2*C));
+    const mx = Math.max(0, (vw*s - W) / (2*W));
+    const my = Math.max(0, (vh*s - H) / (2*H));
     state.nx = Math.max(-mx, Math.min(mx, state.nx));
     state.ny = Math.max(-my, Math.min(my, state.ny));
   }
@@ -275,8 +278,8 @@ function setupTouch(el, img, state, C) {
     const sw = bmp.width * s, sh = bmp.height * s;
     img.style.width  = `${sw}px`;
     img.style.height = `${sh}px`;
-    img.style.left   = `${(C - sw)/2 + state.nx*C}px`;
-    img.style.top    = `${(C - sh)/2 + state.ny*C}px`;
+    img.style.left   = `${(W - sw)/2 + state.nx*W}px`;
+    img.style.top    = `${(H - sh)/2 + state.ny*H}px`;
     img.style.transform = `rotate(${state.rot || 0}deg)`;
   }
 
@@ -303,9 +306,9 @@ function setupTouch(el, img, state, C) {
       const d=Math.hypot(p[0].clientX-p[1].clientX, p[0].clientY-p[1].clientY);
       const m={x:(p[0].clientX+p[1].clientX)/2, y:(p[0].clientY+p[1].clientY)/2};
       state.scale=ss*d/sd;
-      state.nx=sx+(m.x-sm.x)/C; state.ny=sy+(m.y-sm.y)/C;
+      state.nx=sx+(m.x-sm.x)/W; state.ny=sy+(m.y-sm.y)/H;
     } else if (p.length===1) {
-      state.nx=sx+(p[0].clientX-sm.x)/C; state.ny=sy+(p[0].clientY-sm.y)/C;
+      state.nx=sx+(p[0].clientX-sm.x)/W; state.ny=sy+(p[0].clientY-sm.y)/H;
     }
     clamp(); render();
   }, {passive:false});
@@ -332,18 +335,18 @@ $('btn-done').onclick = async () => {
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,CS,CS);
 
   getPositions(CS).forEach((pos,i) => {
-    const {x,y,C}=pos, cell=cells[i];
+    const {x,y,W,H}=pos, cell=cells[i];
     if (!cell?.bmp) return;
     ctx.save();
-    rrect(ctx,x,y,C,C); ctx.clip();
+    rrect(ctx,x,y,W,H); ctx.clip();
     const rot = cell.rot || 0;
     const rotated = rot % 180 !== 0;
     const vw = rotated ? cell.bmp.height : cell.bmp.width;
     const vh = rotated ? cell.bmp.width  : cell.bmp.height;
-    const bs = Math.max(C/vw, C/vh);
+    const bs = Math.max(W/vw, H/vh);
     const s = bs * cell.scale;
     const sw = cell.bmp.width * s, sh = cell.bmp.height * s;
-    ctx.translate(x + C/2 + cell.nx*C, y + C/2 + cell.ny*C);
+    ctx.translate(x + W/2 + cell.nx*W, y + H/2 + cell.ny*H);
     ctx.rotate(rot * Math.PI / 180);
     ctx.drawImage(cell.bmp, -sw/2, -sh/2, sw, sh);
     ctx.restore();
