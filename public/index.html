@@ -13,23 +13,18 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f2f2f7;
-      min-height: 100dvh;
+      background: #f2f2f7; min-height: 100dvh;
+      -webkit-user-select: none; user-select: none;
     }
     .screen {
-      display: none;
-      min-height: 100dvh;
-      padding: calc(env(safe-area-inset-top) + 24px) 20px calc(env(safe-area-inset-bottom) + 24px);
+      display: none; min-height: 100dvh;
+      padding: calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px);
     }
     .screen.active { display: block; }
 
-    .page-title { font-size: 30px; font-weight: 800; color: #111; margin-bottom: 6px; }
-    .page-sub   { font-size: 15px; color: #6b7280; margin-bottom: 28px; }
-
     .btn {
-      display: block; width: 100%; padding: 16px;
-      border: none; border-radius: 14px;
-      font-size: 17px; font-weight: 600; cursor: pointer;
+      display: block; width: 100%; padding: 16px; border: none;
+      border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer;
       margin-bottom: 10px; -webkit-tap-highlight-color: transparent;
     }
     .btn-primary   { background: #007AFF; color: #fff; }
@@ -38,339 +33,315 @@
     .btn:disabled  { opacity: 0.35; }
     .btn:active:not(:disabled) { filter: brightness(0.88); }
 
-    /* ── Screen 1: split count ── */
-    .split-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px; margin-bottom: 28px;
-    }
+    /* ── S1 ── */
+    .page-title { font-size: 28px; font-weight: 800; color: #111; margin-bottom: 6px; }
+    .page-sub   { font-size: 15px; color: #6b7280; margin-bottom: 24px; }
+    .split-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 24px; }
     .split-btn {
       background: #fff; border: 2px solid #e5e7eb; border-radius: 16px;
-      padding: 18px 4px 14px; display: flex; flex-direction: column;
-      align-items: center; gap: 6px; cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
+      padding: 16px 4px 12px; display: flex; flex-direction: column;
+      align-items: center; gap: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
-    .split-btn .num { font-size: 28px; font-weight: 800; color: #111; }
+    .split-btn .num { font-size: 26px; font-weight: 800; color: #111; }
     .split-btn .lbl { font-size: 11px; color: #9ca3af; font-weight: 500; }
     .split-btn.sel  { border-color: #007AFF; background: #eff6ff; }
     .split-btn.sel .num { color: #007AFF; }
-    /* mini grid icon */
-    .lp { width: 28px; height: 28px; display: flex; flex-direction: column; gap: 2px; }
+    .lp { width: 26px; height: 26px; display: flex; flex-direction: column; gap: 2px; }
     .lp-row { display: flex; flex: 1; gap: 2px; }
     .lp-cell { flex: 1; background: #d1d5db; border-radius: 2px; }
     .split-btn.sel .lp-cell { background: #93c5fd; }
 
-    /* ── Screen 2: photo slots ── */
-    .header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    /* ── S2 (edit) ── */
+    .header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
     .back-btn {
       background: #fff; border: none; border-radius: 10px;
       width: 38px; height: 38px; font-size: 20px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0; -webkit-tap-highlight-color: transparent;
     }
-    .header-title { font-size: 20px; font-weight: 700; }
-    .header-sub   { font-size: 13px; color: #6b7280; }
-
-    .slots-wrap { position: relative; aspect-ratio: 1; margin-bottom: 20px; }
-    .slot {
-      position: absolute; background: #fff; border: 2px dashed #d1d5db; border-radius: 12px;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 4px;
-      cursor: pointer; overflow: hidden;
-      -webkit-tap-highlight-color: transparent;
+    .header-title { font-size: 18px; font-weight: 700; flex: 1; }
+    .btn-done {
+      background: #007AFF; color: #fff; border: none; border-radius: 10px;
+      padding: 9px 18px; font-size: 15px; font-weight: 600; cursor: pointer;
+      -webkit-tap-highlight-color: transparent; white-space: nowrap;
     }
-    .slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .slot-num { font-size: 22px; font-weight: 800; color: #d1d5db; }
-    .slot-add { font-size: 11px; color: #9ca3af; }
-    .slot.filled { border-style: solid; border-color: #e5e7eb; }
+    #edit-wrap {
+      position: relative; aspect-ratio: 1; width: 100%;
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+      overflow: hidden; touch-action: none; margin-bottom: 12px;
+    }
+    .ecell {
+      position: absolute; overflow: hidden; border-radius: 8px;
+      touch-action: none; cursor: pointer;
+    }
+    .ecell img {
+      position: absolute; display: block;
+      touch-action: none; pointer-events: none;
+      will-change: left, top, width, height;
+    }
+    .ecell.empty { background: #e5e7eb; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:12px; }
+    .hint { text-align:center; font-size:13px; color:#9ca3af; margin-bottom:14px; }
 
-    /* ── Screen 3: result ── */
+    /* ── S3 ── */
     #preview-canvas {
       width: 100%; border-radius: 16px; display: block;
       margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.13);
     }
 
-    /* ── Loading overlay ── */
+    /* ── Overlay ── */
     .overlay {
       display: none; position: fixed; inset: 0; z-index: 99;
-      background: rgba(0,0,0,0.48);
+      background: rgba(0,0,0,0.5);
       align-items: center; justify-content: center;
-      flex-direction: column; gap: 16px;
-      color: #fff; font-size: 16px; font-weight: 600;
+      flex-direction: column; gap: 14px; color: #fff; font-size: 15px; font-weight: 600;
     }
     .overlay.on { display: flex; }
     .spinner {
-      width: 44px; height: 44px;
-      border: 4px solid rgba(255,255,255,0.3);
-      border-top-color: #fff; border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+      width: 42px; height: 42px;
+      border: 4px solid rgba(255,255,255,0.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay"><div class="spinner"></div><div>作成中…</div></div>
+<div class="overlay" id="ov"><div class="spinner"></div><div id="ov-msg">読み込み中…</div></div>
 
-<!-- Screen 1 -->
+<!-- S1: 分割数 -->
 <div class="screen active" id="s1">
   <div class="page-title">📸 フリマ用写真分割</div>
   <div class="page-sub">何分割にしますか？</div>
   <div class="split-grid" id="split-grid"></div>
-  <button class="btn btn-primary" id="btn-next" disabled>次へ　写真を選ぶ →</button>
+  <button class="btn btn-primary" id="btn-pick" disabled>写真を選ぶ</button>
 </div>
 
-<!-- Screen 2 -->
+<!-- S2: 編集 -->
 <div class="screen" id="s2">
   <div class="header">
     <button class="back-btn" id="back1">‹</button>
-    <div>
-      <div class="header-title" id="s2-title">写真を選ぶ</div>
-      <div class="header-sub">枠をタップして追加</div>
-    </div>
+    <div class="header-title">位置を調整</div>
+    <button class="btn-done" id="btn-done">完成 →</button>
   </div>
-  <div class="slots-wrap" id="slots-wrap"></div>
-  <button class="btn btn-primary" id="btn-make" disabled>コラージュを作成 →</button>
-  <button class="btn btn-gray"    id="btn-multi">まとめて選ぶ（複数選択）</button>
+  <div id="edit-wrap"></div>
+  <p class="hint">ピンチで拡大・ドラッグで位置調整</p>
+  <button class="btn btn-gray" id="btn-repick">写真を選び直す</button>
 </div>
 
-<!-- Screen 3 -->
+<!-- S3: 保存 -->
 <div class="screen" id="s3">
   <div class="header">
     <button class="back-btn" id="back2">‹</button>
-    <div>
-      <div class="header-title">完成！</div>
-      <div class="header-sub">保存ボタンで写真アプリに保存</div>
-    </div>
+    <div class="header-title">完成！</div>
   </div>
   <canvas id="preview-canvas"></canvas>
   <button class="btn btn-primary"   id="btn-save">📥 写真に保存</button>
   <button class="btn btn-secondary" id="btn-again">もう一度作る</button>
 </div>
 
-<input type="file" accept="image/*"          id="fi1" style="display:none">
-<input type="file" accept="image/*" multiple id="fim" style="display:none">
+<input type="file" accept="image/*" multiple id="fi" style="display:none">
 
 <script>
 'use strict';
 
-// 分割数 → [各行の列数]
-const LAYOUTS = { 2:[2], 3:[1,2], 4:[2,2], 5:[2,3], 6:[3,3], 7:[3,4], 8:[4,4] };
+const LAYOUTS  = { 2:[2], 3:[1,2], 4:[2,2], 5:[2,3], 6:[3,3], 7:[3,4], 8:[4,4] };
+const LP_DEF   = { 2:[[2]], 3:[[1],[2]], 4:[[2],[2]], 5:[[2],[3]], 6:[[3],[3]], 7:[[3],[4]], 8:[[4],[4]] };
+const CS = 1500, PAD = 20, GAP = 10, R = 16;
 
-// ミニアイコン用
-const LP = {
-  2:[[2]],   3:[[1],[2]],   4:[[2],[2]],
-  5:[[2],[3]], 6:[[3],[3]], 7:[[3],[4]], 8:[[4],[4]]
-};
-
-const CANVAS_SIZE = 1500, PAD = 20, GAP = 10, CORNER = 16;
-
-let splitCount = 0, photos = [], pickIdx = -1;
+let n = 0;               // splitCount
+let cells = [];          // { bmp, url, scale, nx, ny }
 
 const $ = id => document.getElementById(id);
-const show = id => {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  $(id).classList.add('active');
-  window.scrollTo(0,0);
-};
-const loading = on => $('overlay').classList.toggle('on', on);
+const show = id => { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); window.scrollTo(0,0); };
+const ld = (on, msg='読み込み中…') => { $('ov').classList.toggle('on',on); $('ov-msg').textContent=msg; };
 
-// ── Build split buttons ──────────────────────
-const grid = $('split-grid');
-for (let n = 2; n <= 8; n++) {
-  const btn = document.createElement('button');
-  btn.className = 'split-btn'; btn.dataset.n = n;
-  const lp = LP[n];
-  const lpHtml = `<div class="lp">${lp.map(row=>`<div class="lp-row">${Array(row[0]).fill('<div class="lp-cell"></div>').join('')}</div>`).join('')}</div>`;
-  btn.innerHTML = `${lpHtml}<div class="num">${n}</div><div class="lbl">分割</div>`;
-  btn.onclick = () => {
-    document.querySelectorAll('.split-btn').forEach(b=>b.classList.remove('sel'));
-    btn.classList.add('sel');
-    splitCount = n;
-    $('btn-next').disabled = false;
-  };
-  grid.appendChild(btn);
+// ── 分割ボタン ────────────────────────────────
+const sg = $('split-grid');
+for (let i = 2; i <= 8; i++) {
+  const b = document.createElement('button');
+  b.className='split-btn'; b.dataset.n=i;
+  const lp = LP_DEF[i];
+  b.innerHTML = `<div class="lp">${lp.map(r=>`<div class="lp-row">${Array(r[0]).fill('<div class="lp-cell"></div>').join('')}</div>`).join('')}</div><div class="num">${i}</div><div class="lbl">分割</div>`;
+  b.onclick = () => { document.querySelectorAll('.split-btn').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); n=i; $('btn-pick').disabled=false; };
+  sg.appendChild(b);
 }
+$('btn-pick').onclick  = () => { $('fi').value=''; $('fi').click(); };
+$('btn-repick').onclick = () => { $('fi').value=''; $('fi').click(); };
 
-$('btn-next').onclick = () => {
-  photos = new Array(splitCount).fill(null);
-  buildSlots();
-  $('s2-title').textContent = `${splitCount}枚の写真を選ぶ`;
-  updateMakeBtn();
-  show('s2');
-};
-
-// ── Slots ────────────────────────────────────
-function buildSlots() {
-  const wrap = $('slots-wrap'); wrap.innerHTML = '';
-  const layout = LAYOUTS[splitCount];
-  const numRows = layout.length;
-  const maxCols = Math.max(...layout);
-
-  // キャンバスと同じ計算でスロット位置を決定（パーセント座標）
-  const S = 100, p = PAD/CANVAS_SIZE*100, g = GAP/CANVAS_SIZE*100;
-  const C = Math.min((S-p*2-g*(maxCols-1))/maxCols, (S-p*2-g*(numRows-1))/numRows);
-  const gridW = maxCols*C+(maxCols-1)*g, gridH = numRows*C+(numRows-1)*g;
-  const sx = (S-gridW)/2, sy = (S-gridH)/2;
-
-  let idx = 0;
-  for (let r = 0; r < numRows; r++) {
-    const numCols = layout[r];
-    const rowW = numCols*C+(numCols-1)*g;
-    const rx = sx+(gridW-rowW)/2;
-    const y = sy+r*(C+g);
-    for (let c = 0; c < numCols; c++) {
-      const slot = makeSlot(idx++);
-      slot.style.left=`${rx+c*(C+g)}%`; slot.style.top=`${y}%`;
-      slot.style.width=`${C}%`; slot.style.height=`${C}%`;
-      wrap.appendChild(slot);
-    }
-  }
-}
-
-function makeSlot(idx) {
-  const el = document.createElement('div');
-  el.className = 'slot'; el.dataset.idx = idx;
-  el.innerHTML = `<div class="slot-num">${idx+1}</div><div class="slot-add">タップして追加</div>`;
-  el.onclick = () => { pickIdx = idx; $('fi1').value=''; $('fi1').click(); };
-  return el;
-}
-
-function refreshSlot(idx) {
-  const el = document.querySelector(`.slot[data-idx="${idx}"]`);
-  if (!el) return;
-  if (photos[idx]) {
-    const tmp = document.createElement('canvas');
-    tmp.width = tmp.height = 200;
-    const ctx = tmp.getContext('2d');
-    const img = photos[idx];
-    const sc = Math.max(200/img.width, 200/img.height);
-    ctx.drawImage(img, (200-img.width*sc)/2, (200-img.height*sc)/2, img.width*sc, img.height*sc);
-    el.innerHTML = `<img src="${tmp.toDataURL('image/jpeg',0.7)}">`;
-    el.classList.add('filled');
-  } else {
-    el.innerHTML = `<div class="slot-num">${idx+1}</div><div class="slot-add">タップして追加</div>`;
-    el.classList.remove('filled');
-  }
-}
-
-function updateMakeBtn() {
-  const n = photos.filter(Boolean).length;
-  const btn = $('btn-make');
-  btn.disabled = n < splitCount;
-  btn.textContent = n < splitCount ? `コラージュを作成（${n}/${splitCount}枚）→` : 'コラージュを作成 →';
-}
-
-$('fi1').onchange = async e => {
-  const f = e.target.files[0]; if (!f) return;
-  loading(true);
-  photos[pickIdx] = await createImageBitmap(f);
-  loading(false); refreshSlot(pickIdx); updateMakeBtn();
-};
-
-$('btn-multi').onclick = () => { $('fim').value=''; $('fim').click(); };
-$('fim').onchange = async e => {
-  const files = Array.from(e.target.files).slice(0, splitCount);
+// ── 写真選択 ──────────────────────────────────
+$('fi').onchange = async e => {
+  const files = Array.from(e.target.files).slice(0, n);
   if (!files.length) return;
-  loading(true);
-  for (let i = 0; i < files.length; i++) {
-    photos[i] = await createImageBitmap(files[i]);
-    refreshSlot(i);
+  ld(true, '写真を読み込み中…');
+  // Revoke old URLs
+  cells.forEach(c => { if (c.url) URL.revokeObjectURL(c.url); });
+  cells = [];
+  for (const f of files) {
+    const [bmp, url] = await Promise.all([createImageBitmap(f), Promise.resolve(URL.createObjectURL(f))]);
+    cells.push({ bmp, url, scale:1, nx:0, ny:0 });
   }
-  loading(false); updateMakeBtn();
+  while (cells.length < n) cells.push({ bmp:null, url:null, scale:1, nx:0, ny:0 });
+  ld(false);
+  show('s2');
+  requestAnimationFrame(() => buildEdit());
 };
 
-$('btn-make').onclick = async () => {
-  loading(true);
-  await new Promise(r => requestAnimationFrame(r));
-  buildCollage();
-  loading(false);
-  show('s3');
-};
+// ── レイアウト計算 ────────────────────────────
+function getPositions(containerPx) {
+  const layout = LAYOUTS[n];
+  const rows = layout.length, maxC = Math.max(...layout);
+  const p = PAD/CS*containerPx, g = GAP/CS*containerPx;
+  const C = Math.min((containerPx-p*2-g*(maxC-1))/maxC, (containerPx-p*2-g*(rows-1))/rows);
+  const gw = maxC*C+(maxC-1)*g, gh = rows*C+(rows-1)*g;
+  const sx = (containerPx-gw)/2, sy = (containerPx-gh)/2;
+  const pos = [];
+  for (let r=0; r<rows; r++) {
+    const nc = layout[r], rw = nc*C+(nc-1)*g, rx = sx+(gw-rw)/2, y = sy+r*(C+g);
+    for (let c=0; c<nc; c++) pos.push({ x:rx+c*(C+g), y, C });
+  }
+  return pos;
+}
 
-// ── Canvas ───────────────────────────────────
-function buildCollage() {
-  const canvas = $('preview-canvas');
-  const S = CANVAS_SIZE;
-  canvas.width = canvas.height = S;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, S, S);
+// ── 編集画面構築 ──────────────────────────────
+function buildEdit() {
+  const wrap = $('edit-wrap');
+  wrap.innerHTML = '';
+  const W = wrap.clientWidth || (window.innerWidth - 40);
+  const positions = getPositions(W);
 
-  const layout = LAYOUTS[splitCount];
-  const numRows = layout.length;
-  const maxCols = Math.max(...layout);
+  positions.forEach((pos, i) => {
+    const cell = cells[i];
+    const el = document.createElement('div');
+    el.className = 'ecell';
+    el.style.cssText = `left:${pos.x}px;top:${pos.y}px;width:${pos.C}px;height:${pos.C}px;`;
 
-  // 全セルを正方形にするため、縦横どちらの制約もクリアできる最大サイズを算出
-  const C = Math.min(
-    (S - PAD*2 - GAP*(maxCols-1)) / maxCols,
-    (S - PAD*2 - GAP*(numRows-1)) / numRows
-  );
-
-  // グリッド全体をキャンバス中央に配置
-  const gridW = maxCols*C + (maxCols-1)*GAP;
-  const gridH = numRows*C + (numRows-1)*GAP;
-  const startX = (S - gridW) / 2;
-  const startY = (S - gridH) / 2;
-
-  let pi = 0;
-  for (let r = 0; r < numRows; r++) {
-    const numCols = layout[r];
-    // 列数が少ない行はその行内で中央揃え
-    const rowW = numCols*C + (numCols-1)*GAP;
-    const rowX = startX + (gridW - rowW) / 2;
-    const y = startY + r*(C+GAP);
-    for (let c = 0; c < numCols; c++) {
-      drawCell(ctx, photos[pi++], rowX + c*(C+GAP), y, C, C);
+    if (cell?.bmp) {
+      const img = document.createElement('img');
+      img.src = cell.url;
+      el.appendChild(img);
+      wrap.appendChild(el);
+      setupTouch(el, img, cell, pos.C);
+    } else {
+      el.classList.add('empty');
+      el.textContent = '写真なし';
+      wrap.appendChild(el);
     }
-  }
+  });
 }
 
-function drawCell(ctx, img, x, y, w, h) {
-  ctx.save();
-  // rounded clip
+// ── タッチ処理 ────────────────────────────────
+function setupTouch(el, img, state, C) {
+  const bmp = state.bmp;
+  const bs = Math.max(C/bmp.width, C/bmp.height); // base cover scale
+
+  function clamp() {
+    state.scale = Math.max(1, Math.min(6, state.scale));
+    const s = bs*state.scale, sw=bmp.width*s, sh=bmp.height*s;
+    const mx=Math.max(0,(sw-C)/(2*C)), my=Math.max(0,(sh-C)/(2*C));
+    state.nx = Math.max(-mx, Math.min(mx, state.nx));
+    state.ny = Math.max(-my, Math.min(my, state.ny));
+  }
+
+  function render() {
+    const s=bs*state.scale, sw=bmp.width*s, sh=bmp.height*s;
+    img.style.width=`${sw}px`; img.style.height=`${sh}px`;
+    img.style.left=`${(C-sw)/2+state.nx*C}px`;
+    img.style.top=`${(C-sh)/2+state.ny*C}px`;
+  }
+
+  let p0=[], ss=1, sx=0, sy=0, sd=0, sm={x:0,y:0};
+
+  el.addEventListener('touchstart', e => {
+    e.preventDefault();
+    p0=[...e.touches]; ss=state.scale; sx=state.nx; sy=state.ny;
+    if (p0.length>=2) {
+      sd=Math.hypot(p0[0].clientX-p0[1].clientX, p0[0].clientY-p0[1].clientY);
+      sm={x:(p0[0].clientX+p0[1].clientX)/2, y:(p0[0].clientY+p0[1].clientY)/2};
+    } else {
+      sm={x:p0[0].clientX, y:p0[0].clientY};
+    }
+  }, {passive:false});
+
+  el.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const p=[...e.touches];
+    if (p.length>=2 && p0.length>=2) {
+      const d=Math.hypot(p[0].clientX-p[1].clientX, p[0].clientY-p[1].clientY);
+      const m={x:(p[0].clientX+p[1].clientX)/2, y:(p[0].clientY+p[1].clientY)/2};
+      state.scale=ss*d/sd;
+      state.nx=sx+(m.x-sm.x)/C; state.ny=sy+(m.y-sm.y)/C;
+    } else if (p.length===1) {
+      state.nx=sx+(p[0].clientX-sm.x)/C; state.ny=sy+(p[0].clientY-sm.y)/C;
+    }
+    clamp(); render();
+  }, {passive:false});
+
+  el.addEventListener('touchend', e => {
+    const p=[...e.touches];
+    if (p.length===1) {
+      // ピンチ→ドラッグへの移行時にベースラインをリセット
+      p0=p; ss=state.scale; sx=state.nx; sy=state.ny;
+      sm={x:p[0].clientX, y:p[0].clientY};
+    } else { p0=[]; }
+  }, {passive:true});
+
+  render(); // 初期位置
+}
+
+// ── キャンバス生成 ────────────────────────────
+$('btn-done').onclick = async () => {
+  ld(true,'作成中…');
+  await new Promise(r=>requestAnimationFrame(r));
+  const canvas=$('preview-canvas');
+  canvas.width=canvas.height=CS;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,CS,CS);
+
+  getPositions(CS).forEach((pos,i) => {
+    const {x,y,C}=pos, cell=cells[i];
+    if (!cell?.bmp) return;
+    ctx.save();
+    rrect(ctx,x,y,C,C); ctx.clip();
+    const bs=Math.max(C/cell.bmp.width, C/cell.bmp.height);
+    const s=bs*cell.scale, sw=cell.bmp.width*s, sh=cell.bmp.height*s;
+    ctx.drawImage(cell.bmp, x+(C-sw)/2+cell.nx*C, y+(C-sh)/2+cell.ny*C, sw, sh);
+    ctx.restore();
+  });
+
+  ld(false); show('s3');
+};
+
+function rrect(ctx,x,y,w,h) {
   ctx.beginPath();
-  ctx.moveTo(x+CORNER, y);
-  ctx.lineTo(x+w-CORNER, y); ctx.quadraticCurveTo(x+w, y, x+w, y+CORNER);
-  ctx.lineTo(x+w, y+h-CORNER); ctx.quadraticCurveTo(x+w, y+h, x+w-CORNER, y+h);
-  ctx.lineTo(x+CORNER, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-CORNER);
-  ctx.lineTo(x, y+CORNER); ctx.quadraticCurveTo(x, y, x+CORNER, y);
-  ctx.closePath(); ctx.clip();
-  if (img) {
-    const sc = Math.max(w/img.width, h/img.height);
-    ctx.drawImage(img, x+(w-img.width*sc)/2, y+(h-img.height*sc)/2, img.width*sc, img.height*sc);
-  } else {
-    ctx.fillStyle='#e5e7eb'; ctx.fill();
-  }
-  ctx.restore();
+  ctx.moveTo(x+R,y); ctx.lineTo(x+w-R,y); ctx.quadraticCurveTo(x+w,y,x+w,y+R);
+  ctx.lineTo(x+w,y+h-R); ctx.quadraticCurveTo(x+w,y+h,x+w-R,y+h);
+  ctx.lineTo(x+R,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-R);
+  ctx.lineTo(x,y+R); ctx.quadraticCurveTo(x,y,x+R,y);
+  ctx.closePath();
 }
 
-// ── Save ─────────────────────────────────────
+// ── 保存 ──────────────────────────────────────
 $('btn-save').onclick = () => {
   $('preview-canvas').toBlob(async blob => {
-    const file = new File([blob], `collage_${Date.now()}.jpg`, {type:'image/jpeg'});
+    const file=new File([blob],`collage_${Date.now()}.jpg`,{type:'image/jpeg'});
     try {
-      if (navigator.share && navigator.canShare({files:[file]})) {
-        await navigator.share({files:[file]});
-      } else {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
-      }
-    } catch(e) { if (e.name !== 'AbortError') alert('保存できませんでした'); }
+      if (navigator.share && navigator.canShare({files:[file]})) await navigator.share({files:[file]});
+      else { const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name; a.click(); }
+    } catch(e) { if(e.name!=='AbortError') alert('保存できませんでした'); }
   }, 'image/jpeg', 0.93);
 };
 
+// ── リセット ──────────────────────────────────
 $('btn-again').onclick = () => {
-  photos=[]; splitCount=0;
+  cells.forEach(c=>{if(c.url)URL.revokeObjectURL(c.url);}); cells=[]; n=0;
   document.querySelectorAll('.split-btn').forEach(b=>b.classList.remove('sel'));
-  $('btn-next').disabled=true;
-  show('s1');
+  $('btn-pick').disabled=true; show('s1');
 };
-
 $('back1').onclick = () => show('s1');
 $('back2').onclick = () => show('s2');
 
-// SW
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>
 </body>
 </html>
