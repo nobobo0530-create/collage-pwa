@@ -81,6 +81,20 @@
       will-change: left, top, width, height;
     }
     .ecell.empty { background: #e5e7eb; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:12px; }
+    .ecell.selected::after {
+      content: ''; position:absolute; inset:0; border-radius:8px;
+      background:rgba(0,122,255,0.22); border:3px solid #007AFF;
+      pointer-events:none; z-index:20;
+    }
+    .ecell.selected .sel-badge {
+      display:flex !important;
+    }
+    .sel-badge {
+      display:none; position:absolute; top:5px; left:5px; z-index:21;
+      background:#007AFF; color:#fff; border-radius:50%;
+      width:22px; height:22px; font-size:13px; font-weight:700;
+      align-items:center; justify-content:center;
+    }
     .hint { text-align:center; font-size:13px; color:#9ca3af; margin-bottom:14px; }
     .rot-btn {
       position:absolute; top:5px; right:5px; z-index:10;
@@ -132,7 +146,7 @@
     <button class="btn-done" id="btn-done">完成 →</button>
   </div>
   <div id="edit-wrap"></div>
-  <p class="hint">ピンチで拡大・ドラッグで位置調整</p>
+  <p class="hint">タップ→タップで並び替え ／ ドラッグ・ピンチで位置調整</p>
   <button class="btn btn-gray" id="btn-repick">写真を選び直す</button>
 </div>
 
@@ -158,6 +172,7 @@ const CS = 1500, PAD = 20, GAP = 10, R = 16;
 
 let n = 0;               // splitCount
 let cells = [];          // { bmp, url, scale, nx, ny }
+let selectedIdx = -1;    // 並び替え選択中セル
 
 const $ = id => document.getElementById(id);
 const show = id => { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); window.scrollTo(0,0); };
@@ -215,6 +230,7 @@ function getPositions(containerPx) {
 
 // ── 編集画面構築 ──────────────────────────────
 function buildEdit() {
+  selectedIdx = -1;
   const wrap = $('edit-wrap');
   wrap.innerHTML = '';
   const W = wrap.clientWidth || (window.innerWidth - 40);
@@ -230,8 +246,13 @@ function buildEdit() {
       const img = document.createElement('img');
       img.src = cell.url;
       el.appendChild(img);
+      // 選択バッジ
+      const badge = document.createElement('div');
+      badge.className = 'sel-badge';
+      badge.textContent = '✓';
+      el.appendChild(badge);
       wrap.appendChild(el);
-      setupTouch(el, img, cell, pos.W, pos.H);
+      setupTouch(el, img, cell, pos.W, pos.H, i);
       // 回転ボタン
       const rotBtn = document.createElement('button');
       rotBtn.className = 'rot-btn';
@@ -251,8 +272,24 @@ function buildEdit() {
   });
 }
 
+// ── セル並び替え ──────────────────────────────
+function handleCellTap(idx) {
+  const ecells = document.querySelectorAll('#edit-wrap .ecell');
+  if (selectedIdx === -1) {
+    selectedIdx = idx;
+    ecells[idx].classList.add('selected');
+  } else if (selectedIdx === idx) {
+    selectedIdx = -1;
+    ecells[idx].classList.remove('selected');
+  } else {
+    [cells[selectedIdx], cells[idx]] = [cells[idx], cells[selectedIdx]];
+    selectedIdx = -1;
+    buildEdit();
+  }
+}
+
 // ── タッチ処理 ────────────────────────────────
-function setupTouch(el, img, state, W, H) {
+function setupTouch(el, img, state, W, H, cellIdx) {
   const bmp = state.bmp;
 
   function getDims() {
@@ -287,6 +324,7 @@ function setupTouch(el, img, state, W, H) {
   state._render = render;
 
   let p0=[], ss=1, sx=0, sy=0, sd=0, sm={x:0,y:0};
+  let tapT=0, tapX=0, tapY=0;
 
   el.addEventListener('touchstart', e => {
     e.preventDefault();
@@ -296,6 +334,7 @@ function setupTouch(el, img, state, W, H) {
       sm={x:(p0[0].clientX+p0[1].clientX)/2, y:(p0[0].clientY+p0[1].clientY)/2};
     } else {
       sm={x:p0[0].clientX, y:p0[0].clientY};
+      tapT=Date.now(); tapX=p0[0].clientX; tapY=p0[0].clientY;
     }
   }, {passive:false});
 
@@ -315,6 +354,15 @@ function setupTouch(el, img, state, W, H) {
 
   el.addEventListener('touchend', e => {
     const p=[...e.touches];
+    // タップ判定（短時間・小移動・シングルタッチ）
+    if (p0.length===1 && p.length===0) {
+      const ct = e.changedTouches[0];
+      const dx = Math.abs(ct.clientX - tapX), dy = Math.abs(ct.clientY - tapY);
+      if (Date.now()-tapT < 220 && dx < 10 && dy < 10) {
+        handleCellTap(cellIdx);
+        return;
+      }
+    }
     if (p.length===1) {
       // ピンチ→ドラッグへの移行時にベースラインをリセット
       p0=p; ss=state.scale; sx=state.nx; sy=state.ny;
