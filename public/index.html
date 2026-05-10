@@ -82,6 +82,13 @@
     }
     .ecell.empty { background: #e5e7eb; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:12px; }
     .hint { text-align:center; font-size:13px; color:#9ca3af; margin-bottom:14px; }
+    .rot-btn {
+      position:absolute; top:5px; right:5px; z-index:10;
+      background:rgba(0,0,0,0.45); color:#fff; border:none; border-radius:50%;
+      width:30px; height:30px; font-size:17px; line-height:1;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+    }
 
     /* ── S3 ── */
     #preview-canvas {
@@ -179,9 +186,9 @@ $('fi').onchange = async e => {
   cells = [];
   for (const f of files) {
     const [bmp, url] = await Promise.all([createImageBitmap(f), Promise.resolve(URL.createObjectURL(f))]);
-    cells.push({ bmp, url, scale:1, nx:0, ny:0 });
+    cells.push({ bmp, url, scale:1, nx:0, ny:0, rot:0 });
   }
-  while (cells.length < n) cells.push({ bmp:null, url:null, scale:1, nx:0, ny:0 });
+  while (cells.length < n) cells.push({ bmp:null, url:null, scale:1, nx:0, ny:0, rot:0 });
   ld(false);
   show('s2');
   requestAnimationFrame(() => buildEdit());
@@ -222,6 +229,17 @@ function buildEdit() {
       el.appendChild(img);
       wrap.appendChild(el);
       setupTouch(el, img, cell, pos.C);
+      // 回転ボタン
+      const rotBtn = document.createElement('button');
+      rotBtn.className = 'rot-btn';
+      rotBtn.textContent = '↻';
+      rotBtn.addEventListener('touchstart', e => e.stopPropagation(), {passive:true});
+      rotBtn.addEventListener('click', () => {
+        cell.rot = ((cell.rot || 0) + 90) % 360;
+        cell.scale = 1; cell.nx = 0; cell.ny = 0;
+        cell._clamp(); cell._render();
+      });
+      el.appendChild(rotBtn);
     } else {
       el.classList.add('empty');
       el.textContent = '写真なし';
@@ -233,22 +251,37 @@ function buildEdit() {
 // ── タッチ処理 ────────────────────────────────
 function setupTouch(el, img, state, C) {
   const bmp = state.bmp;
-  const bs = Math.max(C/bmp.width, C/bmp.height); // base cover scale
+
+  function getDims() {
+    const rotated = (state.rot || 0) % 180 !== 0;
+    const vw = rotated ? bmp.height : bmp.width;
+    const vh = rotated ? bmp.width  : bmp.height;
+    return { bs: Math.max(C/vw, C/vh), vw, vh };
+  }
 
   function clamp() {
+    const { bs, vw, vh } = getDims();
     state.scale = Math.max(1, Math.min(6, state.scale));
-    const s = bs*state.scale, sw=bmp.width*s, sh=bmp.height*s;
-    const mx=Math.max(0,(sw-C)/(2*C)), my=Math.max(0,(sh-C)/(2*C));
+    const s = bs * state.scale;
+    const mx = Math.max(0, (vw*s - C) / (2*C));
+    const my = Math.max(0, (vh*s - C) / (2*C));
     state.nx = Math.max(-mx, Math.min(mx, state.nx));
     state.ny = Math.max(-my, Math.min(my, state.ny));
   }
 
   function render() {
-    const s=bs*state.scale, sw=bmp.width*s, sh=bmp.height*s;
-    img.style.width=`${sw}px`; img.style.height=`${sh}px`;
-    img.style.left=`${(C-sw)/2+state.nx*C}px`;
-    img.style.top=`${(C-sh)/2+state.ny*C}px`;
+    const { bs } = getDims();
+    const s = bs * state.scale;
+    const sw = bmp.width * s, sh = bmp.height * s;
+    img.style.width  = `${sw}px`;
+    img.style.height = `${sh}px`;
+    img.style.left   = `${(C - sw)/2 + state.nx*C}px`;
+    img.style.top    = `${(C - sh)/2 + state.ny*C}px`;
+    img.style.transform = `rotate(${state.rot || 0}deg)`;
   }
+
+  state._clamp = clamp;
+  state._render = render;
 
   let p0=[], ss=1, sx=0, sy=0, sd=0, sm={x:0,y:0};
 
@@ -303,9 +336,16 @@ $('btn-done').onclick = async () => {
     if (!cell?.bmp) return;
     ctx.save();
     rrect(ctx,x,y,C,C); ctx.clip();
-    const bs=Math.max(C/cell.bmp.width, C/cell.bmp.height);
-    const s=bs*cell.scale, sw=cell.bmp.width*s, sh=cell.bmp.height*s;
-    ctx.drawImage(cell.bmp, x+(C-sw)/2+cell.nx*C, y+(C-sh)/2+cell.ny*C, sw, sh);
+    const rot = cell.rot || 0;
+    const rotated = rot % 180 !== 0;
+    const vw = rotated ? cell.bmp.height : cell.bmp.width;
+    const vh = rotated ? cell.bmp.width  : cell.bmp.height;
+    const bs = Math.max(C/vw, C/vh);
+    const s = bs * cell.scale;
+    const sw = cell.bmp.width * s, sh = cell.bmp.height * s;
+    ctx.translate(x + C/2 + cell.nx*C, y + C/2 + cell.ny*C);
+    ctx.rotate(rot * Math.PI / 180);
+    ctx.drawImage(cell.bmp, -sw/2, -sh/2, sw, sh);
     ctx.restore();
   });
 
